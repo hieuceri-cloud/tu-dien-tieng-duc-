@@ -1,35 +1,39 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
+import google.generativeai as genai
 
-def get_glosbe_data(word):
-    url = f"https://vi.glosbe.com/de/vi/{word.lower()}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200: return None
-        soup = BeautifulSoup(response.text, 'html.parser')
-        meaning = soup.find('h3', class_='translation__item__phrase')
-        meaning_text = meaning.get_text(strip=True) if meaning else "Không tìm thấy nghĩa"
-        example_de = soup.find('div', class_='dir-ltr')
-        ex_de = example_de.get_text(strip=True) if example_de else "Chưa có ví dụ."
-        return {"meaning": meaning_text, "example": ex_de}
-    except:
-        return None
+# Cấu hình giao diện
+st.set_page_config(page_title="Từ điển Đức-Việt Chuyên Sâu", page_icon="🇩🇪")
 
-st.set_page_config(page_title="Từ điển Đức-Việt", page_icon="🇩🇪")
-st.title("🇩🇪 Từ điển Đức - Việt Thông Minh")
+# Cấu hình Gemini API (Thay 'MÃ_API_CỦA_BẠN' bằng key bạn vừa lấy)
+genai.configure(api_key="AIzaSyB0bV5GuGkUPzlE0BaD_8IQlQjrAgQIY1A")
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-word = st.text_input("Nhập từ vựng cần tra (ví dụ: Fernweh, verschandeln):")
+st.title("🇩🇪 Từ Điển Đức - Việt Chuyên Sâu")
+word = st.text_input("Nhập từ vựng hoặc cụm từ:", placeholder="Ví dụ: Fernweh, verschandeln...")
 
 if word:
-    with st.spinner('Đang tìm kiếm...'):
-        data = get_glosbe_data(word)
-        if data:
-            st.success(f"**1) Nghĩa tiếng Việt:** {data['meaning']}")
-            st.info(f"**2) Ví dụ:** {data['example']}")
+    with st.spinner('Đang phân tích chuyên sâu...'):
+        # Prompt này giúp AI trả về kết quả chuẩn xác như ảnh mẫu
+        prompt = f"""
+        Bạn là một chuyên gia ngôn ngữ học tiếng Đức. Hãy tra từ hoặc cụm từ: "{word}"
+        Hãy trả về kết quả theo cấu trúc chính xác sau:
+        1) Nghĩa thông dụng nhất bằng tiếng Việt: [Giải thích nghĩa chính xác]
+           - Beispiel: [Câu ví dụ tiếng Đức hay] ([Dịch ví dụ sang tiếng Việt])
+        2) Gợi ý dạng từ gần giống hoặc cấu tạo từ:
+           - [Phân tích chi tiết: Nếu là danh từ hãy cho biết giống (der/die/das), nếu là động từ hãy cho biết cách chia hoặc tiền tố tách, nếu là từ ghép hãy phân tích các từ thành phần]
+        """
+        
+        try:
+            response = model.generate_content(prompt)
+            result = response.text
+            
+            # Hiển thị kết quả theo phong cách chuyên nghiệp
+            st.markdown("### Kết quả tra cứu:")
+            st.info(result)
+            
+            # Link nghe phát âm luôn cần thiết
             yg_url = f"https://youglish.com/pronounce/{word.lower()}/german"
-            st.markdown(f"**3) Nghe phát âm:** [Bấm để nghe trên YouGlish]({yg_url})")
-            st.components.v1.iframe(yg_url, height=500)
-        else:
-            st.error("Rất tiếc, không tìm thấy dữ liệu cho từ này.")
+            st.markdown(f"**3) Nghe thử từ này:** [Click để nghe trên YouGlish]({yg_url})")
+            
+        except Exception as e:
+            st.error("Có lỗi xảy ra khi kết nối với bộ não AI. Hãy kiểm tra API Key!")
