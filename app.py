@@ -5,7 +5,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="Từ điển Đức-Việt Chuyên Sâu", page_icon="🇩🇪")
 
 # Cấu hình Gemini API (Thay 'MÃ_API_CỦA_BẠN' bằng key bạn vừa lấy)
-genai.configure(api_key="AIzaSyADQqWftaEOaSVeCLgaNuyP0JGqo8KVYa4")
+genai.configure(api_key="AIzaSyDdbSrVMYZ03u2LGAru1qx0__LmTqNrGbw")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 st.title("🇩🇪 Từ Điển Đức - Việt Chuyên Sâu")
